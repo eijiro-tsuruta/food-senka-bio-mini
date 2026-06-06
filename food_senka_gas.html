@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Food専科 BIO mini</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --amber:#d4841a;--amber-light:#f0a832;--amber-pale:#fff8ee;--amber-subtle:#fffdf8;
+  --bark:#3d2b1a;--bark-mid:#6b4c2e;--bark-light:#a07850;
+  --sage:#4a7c59;--sage-light:#7aad8a;--sage-pale:#f0f8f2;
+  --cream:#fdf8f0;--warm-white:#fffcf7;
+  --border:#e8d5b0;--text:#2d1f0e;--muted:#8a6840;
+  --ok:#3d8c5c;--danger:#c0392b;--warn:#d4841a;
+  --shadow:rgba(61,43,26,0.10);
+}
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;600&family=Noto+Sans+JP:wght@300;400;500&display=swap');
+body{background:var(--cream);color:var(--text);font-family:'Noto Sans JP',sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* セットアップ */
+.setup-screen{display:flex;align-items:center;justify-content:center;flex:1;padding:20px;background:linear-gradient(145deg,#fffdf8 0%,#fff8ee 50%,#fdf3e3 100%)}
+.setup-card{background:var(--warm-white);border:1px solid var(--border);border-radius:20px;padding:40px;max-width:460px;width:100%;box-shadow:0 8px 40px var(--shadow);position:relative;overflow:hidden}
+.setup-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--amber),var(--amber-light),var(--sage-light),var(--amber));animation:shimmer 3s ease-in-out infinite;background-size:200% 100%}
+@keyframes shimmer{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.setup-logo{font-size:52px;text-align:center;margin-bottom:10px}
+.setup-title{font-family:'Noto Serif JP',serif;font-size:22px;font-weight:600;text-align:center;color:var(--bark);margin-bottom:4px;letter-spacing:0.05em}
+.setup-subtitle{font-size:11px;color:var(--amber);text-align:center;font-weight:500;letter-spacing:0.12em;margin-bottom:6px}
+.setup-sub{font-size:13px;color:var(--muted);text-align:center;margin-bottom:30px;line-height:1.6}
+.form-group{margin-bottom:18px}
+.form-label{font-size:11px;color:var(--bark-mid);margin-bottom:6px;font-weight:500;letter-spacing:0.04em;display:block}
+.setup-input{width:100%;background:var(--amber-subtle);border:1.5px solid var(--border);border-radius:10px;padding:12px 16px;color:var(--text);font-size:13px;font-family:monospace;outline:none;transition:all .2s}
+.setup-input:focus{border-color:var(--amber);background:var(--warm-white);box-shadow:0 0 0 3px rgba(212,132,26,0.12)}
+.setup-btn{width:100%;margin-top:8px;background:linear-gradient(135deg,var(--amber),var(--amber-light));border:none;border-radius:12px;padding:14px;color:#fff;font-size:14px;font-weight:500;cursor:pointer;letter-spacing:0.06em;transition:all .2s;box-shadow:0 4px 16px rgba(212,132,26,0.35)}
+.setup-btn:hover{background:linear-gradient(135deg,var(--bark-mid),var(--amber));transform:translateY(-1px)}
+.setup-note{font-size:11px;color:var(--muted);text-align:center;margin-top:16px;line-height:1.8}
+
+/* アプリ */
+.app{display:none;flex-direction:column;height:100vh}
+.header{background:var(--warm-white);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0;box-shadow:0 2px 8px var(--shadow)}
+.header-logo{font-size:28px}
+.header-info{flex:1}
+.header-title{font-family:'Noto Serif JP',serif;font-size:16px;font-weight:600;color:var(--bark);letter-spacing:0.04em}
+.header-sub{font-size:10px;color:var(--amber);font-weight:500;letter-spacing:0.08em;margin-top:1px}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 6px rgba(61,140,92,0.6);margin-left:auto}
+
+/* タブ */
+.tab-bar{background:var(--warm-white);border-bottom:1px solid var(--border);padding:0 20px;display:flex;flex-shrink:0}
+.tab-btn{padding:10px 18px;border:none;background:transparent;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;letter-spacing:0.04em;font-family:'Noto Sans JP',sans-serif}
+.tab-btn.active{color:var(--amber);border-bottom-color:var(--amber)}
+
+/* メインコンテンツ */
+.main-content{flex:1;overflow:hidden;display:flex;flex-direction:column;background:var(--cream)}
+
+/* チャット */
+.chat-view{display:flex;flex-direction:column;height:100%;overflow:hidden}
+.messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px;scroll-behavior:smooth}
+.messages::-webkit-scrollbar{width:4px}
+.messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.msg-row{display:flex;gap:10px;align-items:flex-start;width:100%}
+.msg-row.user{flex-direction:row-reverse}
+.avatar{width:34px;height:34px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px}
+.ai-av{background:var(--amber-pale);border:1.5px solid var(--border)}
+.user-av{background:var(--warm-white);border:1.5px solid var(--border)}
+.bubble{max-width:74%;padding:12px 16px;border-radius:16px;font-size:13.5px;line-height:1.8;color:var(--text)}
+.ai-bubble{background:var(--warm-white);border:1px solid var(--border);border-top-left-radius:4px;box-shadow:0 2px 8px var(--shadow)}
+.user-bubble{background:linear-gradient(135deg,var(--amber),var(--amber-light));color:#fff;border-top-right-radius:4px}
+.ai-bubble h1,.ai-bubble h2,.ai-bubble h3{font-family:'Noto Serif JP',serif;color:var(--bark);font-weight:600;margin:10px 0 4px}
+.ai-bubble h1{font-size:15px}.ai-bubble h2{font-size:14px}.ai-bubble h3{font-size:13.5px}
+.ai-bubble p{margin:4px 0}
+.ai-bubble ul,.ai-bubble ol{padding-left:18px;margin:4px 0}
+.ai-bubble li{margin:3px 0}
+.ai-bubble strong{color:var(--bark);font-weight:600}
+.ai-bubble code{background:var(--amber-subtle);padding:1px 6px;border-radius:4px;font-size:12px;font-family:monospace;color:var(--amber)}
+.ai-bubble hr{border:none;border-top:1px solid var(--border);margin:8px 0}
+.ai-bubble table{border-collapse:collapse;font-size:12.5px;margin:8px 0;width:100%}
+.ai-bubble th{background:var(--amber-pale);color:var(--bark);padding:6px 12px;text-align:left;border:1px solid var(--border);font-weight:600}
+.ai-bubble td{padding:6px 12px;border:1px solid var(--border)}
+.ai-bubble tr:nth-child(even) td{background:var(--amber-subtle)}
+.typing-dots{display:flex;gap:5px;padding:4px 0}
+.typing-dots span{width:7px;height:7px;border-radius:50%;background:var(--amber-light);animation:bounce 1.3s infinite}
+.typing-dots span:nth-child(2){animation-delay:.2s}
+.typing-dots span:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-6px);opacity:1}}
+
+/* 入力エリア */
+.input-area{border-top:1px solid var(--border);background:var(--warm-white);padding:12px 20px;flex-shrink:0}
+.chips{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.chip{font-size:11.5px;padding:5px 12px;border-radius:20px;border:1.5px solid var(--border);background:var(--amber-subtle);color:var(--bark-mid);cursor:pointer;transition:all .2s;white-space:nowrap}
+.chip:hover{border-color:var(--amber);color:var(--amber);background:var(--amber-pale);transform:translateY(-1px)}
+.action-row{display:flex;gap:8px;margin-bottom:10px}
+.btn-action{font-size:11px;padding:4px 12px;border-radius:16px;border:1px solid var(--border);background:var(--cream);color:var(--muted);cursor:pointer;transition:all .15s}
+.btn-action:hover{border-color:var(--bark-light);color:var(--bark-mid)}
+.btn-action.danger:hover{border-color:var(--danger);color:var(--danger)}
+.save-status{font-size:11px;color:var(--ok);margin-left:auto;align-self:center}
+.input-row{display:flex;gap:10px;align-items:flex-end}
+textarea{flex:1;background:var(--amber-subtle);border:1.5px solid var(--border);border-radius:12px;padding:10px 14px;color:var(--text);font-size:13.5px;font-family:'Noto Sans JP',sans-serif;resize:none;outline:none;min-height:40px;max-height:100px;line-height:1.55;transition:all .2s}
+textarea::placeholder{color:var(--muted);opacity:0.6}
+textarea:focus{border-color:var(--amber);background:var(--warm-white);box-shadow:0 0 0 3px rgba(212,132,26,0.12)}
+.send-btn{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--amber),var(--amber-light));border:none;cursor:pointer;color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;box-shadow:0 3px 12px rgba(212,132,26,0.35)}
+.send-btn:hover{background:linear-gradient(135deg,var(--bark-mid),var(--amber));transform:scale(1.06)}
+.send-btn:active{transform:scale(.96)}
+.send-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+/* 手作り食 */
+.homemade-view{display:none;flex:1;overflow-y:auto;padding:20px}
+.card{background:var(--warm-white);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:16px;box-shadow:0 2px 8px var(--shadow)}
+.card-title{font-family:'Noto Serif JP',serif;font-size:15px;font-weight:600;color:var(--bark);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.section-label{font-size:11px;font-weight:500;color:var(--muted);letter-spacing:0.06em;margin-bottom:8px;margin-top:12px}
+.ingredient-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:4px}
+.ingredient-item{display:flex;align-items:center;gap:6px;background:var(--amber-subtle);border:1.5px solid var(--border);border-radius:10px;padding:8px 10px;cursor:pointer;transition:all .2s;flex-wrap:wrap}
+.ingredient-item.selected{background:var(--amber-pale);border-color:var(--amber);box-shadow:0 0 0 2px rgba(212,132,26,0.15)}
+.ingredient-check{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--border);background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;color:transparent;transition:all .2s}
+.ingredient-item.selected .ingredient-check{background:var(--amber);border-color:var(--amber);color:#fff}
+.ingredient-label{font-size:12px;color:var(--text)}
+.gram-input-wrap{display:none;align-items:center;gap:3px;margin-left:auto}
+.ingredient-item.selected .gram-input-wrap{display:flex}
+.gram-input{width:52px;padding:2px 5px;font-size:12px;border-radius:6px;border:1px solid var(--border);background:var(--warm-white);color:var(--text);text-align:right;outline:none}
+.gram-input:focus{border-color:var(--amber)}
+.gram-unit{font-size:11px;color:var(--muted)}
+.amount-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.amount-label{font-size:12px;color:var(--bark-mid);min-width:80px}
+.amount-input{flex:1;background:var(--amber-subtle);border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--text);outline:none;transition:all .2s}
+.amount-input:focus{border-color:var(--amber);background:var(--warm-white)}
+.amount-unit{font-size:12px;color:var(--muted)}
+.cooking-group{margin-bottom:16px}
+.cooking-label{font-size:12px;color:var(--bark-mid);margin-bottom:6px}
+.cooking-options{display:flex;gap:8px;flex-wrap:wrap}
+.radio-btn{padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--amber-subtle);color:var(--muted);cursor:pointer;font-size:12px;transition:all .2s}
+.radio-btn.active{background:var(--amber-pale);border-color:var(--amber);color:var(--amber);font-weight:500}
+.calc-btn{width:100%;padding:14px;border-radius:12px;background:linear-gradient(135deg,var(--sage),var(--sage-light));border:none;color:#fff;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;letter-spacing:0.06em;box-shadow:0 4px 16px rgba(74,124,89,0.35)}
+.calc-btn:hover{background:linear-gradient(135deg,#3a6647,var(--sage));transform:translateY(-1px)}
+.result-box{background:var(--sage-pale);border:1px solid var(--sage-light);border-radius:12px;padding:16px;margin-top:16px}
+.result-title{font-size:13px;font-weight:600;color:var(--sage);margin-bottom:10px}
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.result-item{background:#fff;border-radius:8px;padding:10px 12px;border:1px solid rgba(122,173,138,0.3)}
+.result-item-label{font-size:11px;color:var(--muted);margin-bottom:2px}
+.result-item-value{font-size:16px;font-weight:600;color:var(--bark)}
+.result-item-unit{font-size:11px;color:var(--muted);margin-left:2px}
+.warn-box{background:#fff8ee;border:1px solid var(--amber);border-radius:10px;padding:10px 14px;margin-top:10px;font-size:12px;color:var(--amber);line-height:1.7}
+.notice-box{background:var(--sage-pale);border:1px solid var(--sage-light);border-radius:10px;padding:10px 14px;margin-top:10px;font-size:12px;color:var(--bark-mid);line-height:1.7}
+
+/* 原材料評価 */
+.eval-view{display:none;flex:1;overflow-y:auto;padding:20px}
+.eval-textarea{width:100%;min-height:120px;background:var(--amber-subtle);border:1.5px solid var(--border);border-radius:12px;padding:14px;color:var(--text);font-size:13px;font-family:'Noto Sans JP',sans-serif;outline:none;resize:vertical;transition:all .2s;line-height:1.6}
+.eval-textarea:focus{border-color:var(--amber);background:var(--warm-white)}
+.eval-btn{width:100%;padding:13px;border-radius:12px;margin-top:10px;background:linear-gradient(135deg,var(--amber),var(--amber-light));border:none;color:#fff;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;letter-spacing:0.06em;box-shadow:0 4px 16px rgba(212,132,26,0.35)}
+.eval-btn:hover{background:linear-gradient(135deg,var(--bark-mid),var(--amber));transform:translateY(-1px)}
+.hint-box{background:var(--amber-subtle);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;font-size:12px;color:var(--muted);line-height:1.6}
+.hint-box strong{color:var(--bark-mid)}
+</style>
+</head>
+<body>
+
+<div class="setup-screen" id="setupScreen">
+  <div class="setup-card">
+    <div class="setup-logo">🐾</div>
+    <div class="setup-subtitle">Food専科 BIO mini</div>
+    <div class="setup-title">ドッグフード評価AI</div>
+    <div class="setup-sub">会員専用サービスです。<br>発行されたIDとパスワードでログインしてください。</div>
+    <div class="form-group">
+      <label class="form-label">ID</label>
+      <input class="setup-input" id="loginId" type="text" placeholder="FOOD-XXXXXXXX" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label class="form-label">パスワード</label>
+      <input class="setup-input" id="loginPw" type="password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <div id="loginError" style="display:none;color:var(--danger);font-size:12px;margin:0 0 12px;text-align:center;line-height:1.6"></div>
+    <button class="setup-btn" id="loginBtn" onclick="doLogin()">🌿 ログイン</button>
+    <div class="setup-note">IDとパスワードはご登録時にメールでお送りしています。<br>お問い合わせは登録メールアドレスまでご連絡ください。</div>
+  </div>
+</div>
+
+<div class="app" id="mainApp">
+  <div class="header">
+    <div class="header-logo">🐾</div>
+    <div class="header-info">
+      <div class="header-title">Food専科 BIO mini</div>
+      <div class="header-sub">DOG FOOD EVALUATION AI</div>
+    </div>
+    <div class="status-dot"></div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('chat')" id="tab-chat">💬 相談チャット</button>
+    <button class="tab-btn" onclick="switchTab('homemade')" id="tab-homemade">🥩 手作り食計算</button>
+    <button class="tab-btn" onclick="switchTab('eval')" id="tab-eval">🔍 原材料評価</button>
+  </div>
+  <div class="main-content">
+
+    <!-- チャット -->
+    <div class="chat-view" id="chatView">
+      <div class="messages" id="messages"></div>
+      <div class="input-area">
+        <div class="chips">
+          <div class="chip" onclick="useChip(this)">ドッグフード原材料を評価して</div>
+          <div class="chip" onclick="useChip(this)">植物性タンパク質の注意点は？</div>
+          <div class="chip" onclick="useChip(this)">豆類が多いフードのリスクは？</div>
+          <div class="chip" onclick="useChip(this)">腎臓ケアフードの選び方</div>
+          <div class="chip" onclick="useChip(this)">加水分解タンパクとは？</div>
+          <div class="chip" onclick="useChip(this)">手作り食のCa:P比について</div>
+        </div>
+        <div class="action-row">
+          <button class="btn-action" onclick="saveConversation()">💾 保存</button>
+          <button class="btn-action" onclick="exportConversation()">📤 エクスポート</button>
+          <button class="btn-action danger" onclick="clearConversation()">🗑 クリア</button>
+          <span class="save-status" id="saveStatus"></span>
+        </div>
+        <div class="input-row">
+          <textarea id="userInput" placeholder="ドッグフードについて質問してください..." rows="1"
+            onkeydown="handleKeyDown(event)" oninput="autoResize(this)"></textarea>
+          <button class="send-btn" onclick="sendMessage()" id="sendBtn">➤</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 手作り食 -->
+    <div class="homemade-view" id="homemadeView">
+      <div class="card">
+        <div class="card-title">🐕 犬の基本情報</div>
+        <div class="amount-row">
+          <div class="amount-label">体重</div>
+          <input class="amount-input" type="number" id="dogWeight" placeholder="10" min="0.5" max="100" step="0.5">
+          <div class="amount-unit">kg</div>
+        </div>
+        <div class="amount-row">
+          <div class="amount-label">年齢</div>
+          <input class="amount-input" type="number" id="dogAge" placeholder="3" min="0" max="20">
+          <div class="amount-unit">歳</div>
+        </div>
+        <div class="cooking-group">
+          <div class="cooking-label">活動レベル</div>
+          <div class="cooking-options">
+            <div class="radio-btn active" onclick="selectRadio('activity',this,'low')">低め</div>
+            <div class="radio-btn" onclick="selectRadio('activity',this,'normal')">普通</div>
+            <div class="radio-btn" onclick="selectRadio('activity',this,'high')">高め</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">🥩 食材を選ぶ（グラム数を入力）</div>
+        <div class="section-label">肉・タンパク質</div>
+        <div class="ingredient-grid" id="grid-meat"></div>
+        <div class="section-label">内臓</div>
+        <div class="ingredient-grid" id="grid-organ"></div>
+        <div class="section-label">野菜</div>
+        <div class="ingredient-grid" id="grid-veg"></div>
+        <div class="section-label">果物・その他</div>
+        <div class="ingredient-grid" id="grid-other"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🍳 調理方法</div>
+        <div class="cooking-group">
+          <div class="cooking-label">肉の調理</div>
+          <div class="cooking-options">
+            <div class="radio-btn active" onclick="selectRadio('meatCook',this,'raw')">生食</div>
+            <div class="radio-btn" onclick="selectRadio('meatCook',this,'steam')">蒸す</div>
+            <div class="radio-btn" onclick="selectRadio('meatCook',this,'boil')">ボイル</div>
+          </div>
+        </div>
+        <div class="cooking-group">
+          <div class="cooking-label">野菜の調理</div>
+          <div class="cooking-options">
+            <div class="radio-btn active" onclick="selectRadio('vegCook',this,'ferment')">発酵</div>
+            <div class="radio-btn" onclick="selectRadio('vegCook',this,'steam')">蒸す</div>
+            <div class="radio-btn" onclick="selectRadio('vegCook',this,'boil')">ボイル</div>
+            <div class="radio-btn" onclick="selectRadio('vegCook',this,'raw')">生</div>
+          </div>
+        </div>
+        <button class="calc-btn" onclick="calcHomemade()">🧮 栄養を計算してAIに評価してもらう</button>
+        <div id="calcResult"></div>
+      </div>
+    </div>
+
+    <!-- 原材料評価 -->
+    <div class="eval-view" id="evalView">
+      <div class="card">
+        <div class="card-title">🔬 ドッグフード原材料評価</div>
+        <div class="hint-box">
+          <strong>入力のヒント：</strong>パッケージの「原材料名」欄の内容をそのまま貼り付けてください。
+          保証成分（タンパク質○%など）も一緒に入力するとより詳しく評価できます。
+        </div>
+        <textarea class="eval-textarea" id="evalInput"
+          placeholder="例：鶏肉、エンドウ豆タンパク、玄米、サーモン、鶏脂、エンドウ豆デンプン、乾燥ビート果肉...&#10;&#10;保証成分：粗タンパク質 26%以上、粗脂肪 14%以上、粗繊維 5%以下、水分 10%以下"></textarea>
+        <button class="eval-btn" onclick="evalIngredients()">🔍 原材料を評価する</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── システムプロンプト（厳格版）──
+const SYSTEM_PROMPT = `あなたは「Food専科 BIO mini」というドッグフード専門の評価AIです。
+以下のルールを厳守して日本語で回答してください。
+
+## 【絶対厳守】手作り食の回答ルール
+
+### 使用できる食材は以下のリストのみ
+肉類：鶏むね、鶏もも、牛赤身、豚赤身、丸鶏
+内臓：レバー、ハツ、砂肝
+野菜：かぼちゃ、大根、セロリ、ブロッコリー、青梗菜、レタス、パセリ
+果物：パイナップル、ブルーベリー、ラズベリー、ブラックベリー
+その他：チアシード、卵、卵殻カルシウム
+
+### 手作り食で絶対に推奨・提案しない食材
+- 白米（どんな理由があっても提案禁止）
+- さつまいも（どんな理由があっても提案禁止）
+- その他、上記リスト外の食材はすべて提案しない
+
+### 手作り食のルール
+- 肉の調理：個体差があるため一律に生食を勧めない。
+  - ドライフード育ちの犬は生肉でお腹を壊すことがある
+  - 初めての手作り食はボイル・蒸しから始め、慣れてきたら少しずつ生に切り替えるよう推奨
+  - 生食に慣れている犬はそのままでよい
+  - 鶏肉をボイルした場合：流水で軽く洗う選択肢を提示（脂質除去・軟便対策のため）
+- 野菜：発酵が理想。代替として蒸す・ボイル。必ず細かくする
+- かぼちゃ：便を硬くする効果あり（重要食材）
+- チアシード：可溶性繊維源として重要
+- 便の状態について：ドライフードのカチカチ便が「正常」ではない。
+  野生の肉食動物（狼など）の便はもっと柔らかく、手作り食に切り替えると
+  柔らかくなることがあるが、それは異常ではないと伝える。
+  ただし水様便・血便は獣医師に相談。
+
+### 計算値が提示された場合
+AIは再計算しない。提示された計算値をそのまま使って評価する。
+
+### 給与量の注意事項（必ず伝える）
+計算値は理論値・参考値。犬の胃はドライフードの量に慣れているため、
+手作り食への切り替えはドライフードと同じ重量からスタートして徐々に調整するよう必ず伝える。
+
+### 獣医師への相談（必ず毎回入れる）
+手作り食に関する回答の末尾には必ず以下を入れる：
+「⚕️ 手作り食への切り替えや継続については、かかりつけの獣医師にご相談の上お決めください。持病・投薬中の場合は特に重要です。」
+
+## ドッグフード評価ルール
+
+### タンパク質の分類（必ず区別する）
+1. 動物性タンパク質 → 主評価対象 ✅
+2. 植物性タンパク質（エンドウ豆・レンズ豆・豆タンパクなど）→ 注意評価 ⚠️
+3. 加水分解タンパク（酵素分解・酸分解）→ 別カテゴリーで評価
+
+### 評価原則
+- 高タンパク＝悪ではない。健康犬では高タンパクを否定しない
+- 腎臓ケアではリン管理も重視（タンパク質量だけで判断しない）
+- 原材料の順位・豆比率・油脂の種類を必ず確認
+- 保証成分だけで評価しない
+- 過剰な警告・保守的すぎる回答は避ける
+
+## 回答スタイル
+- 絵文字を適度に使用
+- 評価時は★で総合評価を表示
+- 具体的・実践的なアドバイス
+- 専門用語には説明を添える`;
+
+// ── 食材データ ──
+const INGREDIENTS = {
+  meat: [
+    {id:'chicken_breast',label:'🐔 鶏むね',kcal:108,prot:22.3,fat:1.5,ca:3,p:220},
+    {id:'chicken_thigh', label:'🍗 鶏もも',kcal:204,prot:17.3,fat:14.2,ca:5,p:180},
+    {id:'beef_lean',     label:'🥩 牛赤身',kcal:165,prot:21.0,fat:8.8,ca:4,p:200},
+    {id:'pork_lean',     label:'🐷 豚赤身',kcal:128,prot:22.1,fat:3.7,ca:4,p:220},
+    {id:'whole_chicken', label:'🐓 丸鶏',  kcal:200,prot:18.5,fat:13.0,ca:20,p:200},
+  ],
+  organ: [
+    {id:'liver',  label:'🫀 レバー',kcal:128,prot:19.6,fat:4.0,ca:6,p:340},
+    {id:'heart',  label:'❤️ ハツ',  kcal:128,prot:16.5,fat:7.4,ca:4,p:220},
+    {id:'gizzard',label:'🫁 砂肝',  kcal:94, prot:18.3,fat:1.8,ca:8,p:200},
+  ],
+  veg: [
+    {id:'pumpkin', label:'🎃 かぼちゃ',    kcal:49, prot:1.9,fat:0.3,ca:15,p:43},
+    {id:'radish',  label:'🌱 大根',         kcal:18, prot:0.5,fat:0.1,ca:24,p:18},
+    {id:'celery',  label:'🥬 セロリ',       kcal:15, prot:1.0,fat:0.1,ca:39,p:39},
+    {id:'broccoli',label:'🥦 ブロッコリー', kcal:37, prot:4.3,fat:0.5,ca:50,p:89},
+    {id:'bokchoy', label:'🥗 青梗菜',       kcal:13, prot:1.3,fat:0.1,ca:100,p:27},
+    {id:'lettuce', label:'🥬 レタス',       kcal:12, prot:1.0,fat:0.2,ca:24,p:22},
+    {id:'parsley', label:'🌿 パセリ',       kcal:44, prot:4.0,fat:0.7,ca:290,p:61},
+  ],
+  other: [
+    {id:'pineapple',   label:'🍍 パイナップル',   kcal:51, prot:0.6,fat:0.1,ca:11,p:11},
+    {id:'blueberry',   label:'🫐 ブルーベリー',   kcal:49, prot:0.5,fat:0.1,ca:8,p:9},
+    {id:'raspberry',   label:'🍓 ラズベリー',     kcal:41, prot:1.2,fat:0.1,ca:22,p:29},
+    {id:'blackberry',  label:'🍇 ブラックベリー', kcal:43, prot:1.4,fat:0.5,ca:32,p:22},
+    {id:'chia_seed',   label:'🌰 チアシード',     kcal:486,prot:16.5,fat:30.7,ca:631,p:860},
+    {id:'egg',         label:'🥚 卵',             kcal:151,prot:12.3,fat:10.3,ca:51,p:180},
+    {id:'eggshell_ca', label:'🥛 卵殻Ca',         kcal:0,  prot:0,fat:0,ca:3800,p:0},
+  ]
+};
+
+// ── 状態 ──
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbx9r0GkVLlm3p8hDR0OsUia9aXo4uPDWFMx5hQlrjU_zOW8rxQSRDDhaBtxhwg4Sv2n7w/exec';
+let history = [];
+let isLoading = false;
+const radioState = {activity:'low', meatCook:'raw', vegCook:'ferment'};
+const selectedIngredients = {};
+
+// ── ログイン ──
+async function doLogin() {
+  const id = document.getElementById('loginId').value.trim();
+  const pw = document.getElementById('loginPw').value.trim();
+  const errEl = document.getElementById('loginError');
+  const btn = document.getElementById('loginBtn');
+
+  if (!id || !pw) {
+    errEl.textContent = 'IDとパスワードを入力してください';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '確認中...';
+  errEl.style.display = 'none';
+
+  try {
+    const res = await fetch(`${GAS_URL}?action=login&id=${encodeURIComponent(id)}&pw=${encodeURIComponent(pw)}`);
+    const data = await res.json();
+
+    if (data.status === 'ok') {
+      sessionStorage.setItem('food_bio_user', id);
+      startApp();
+    } else if (data.status === 'suspended') {
+      errEl.textContent = 'このアカウントは現在ご利用いただけません。お問い合わせください。';
+      errEl.style.display = 'block';
+    } else {
+      errEl.textContent = 'IDまたはパスワードが正しくありません';
+      errEl.style.display = 'block';
+      document.getElementById('loginPw').value = '';
+    }
+  } catch(e) {
+    errEl.textContent = '通信エラーが発生しました。しばらくしてからお試しください。';
+    errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🌿 ログイン';
+  }
+}
+
+// ── 起動 ──
+window.onload = () => {
+  buildIngredientGrids();
+  const user = sessionStorage.getItem('food_bio_user');
+  if (user) startApp();
+};
+
+function startApp() {
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'flex';
+  loadHistory();
+  if (!history.length) addWelcomeMessage();
+}
+
+// ── タブ ──
+function switchTab(tab) {
+  ['chat','homemade','eval'].forEach(t => {
+    document.getElementById(`tab-${t}`).classList.remove('active');
+    const v = document.getElementById(`${t}View`);
+    if (t === 'chat') v.style.display = 'none';
+    else v.style.display = 'none';
+  });
+  document.getElementById(`tab-${tab}`).classList.add('active');
+  const view = document.getElementById(`${tab}View`);
+  if (tab === 'chat') view.style.display = 'flex';
+  else view.style.display = 'block';
+}
+
+// ── メッセージ ──
+function addWelcomeMessage() {
+  const msg = `**Food専科 BIO mini** へようこそ！🐾
+
+ドッグフードの評価・手作り食サポートに特化したAIです。
+
+**できること：**
+- 🔬 ドッグフードの原材料・成分評価
+- 🥩 タンパク質の種類（動物性/植物性/加水分解）の詳細分析
+- 🧮 手作り食の栄養計算とAI評価
+- 💡 フード選びのアドバイス（腎臓ケア・アレルギー対応など）
+
+気になるフードの原材料を教えてください。「原材料評価」タブも便利です。`;
+  addMessage('assistant', msg);
+}
+
+function addMessage(role, content) {
+  const container = document.getElementById('messages');
+  const row = document.createElement('div');
+  row.className = `msg-row${role === 'user' ? ' user' : ''}`;
+  const av = document.createElement('div');
+  av.className = `avatar ${role === 'user' ? 'user-av' : 'ai-av'}`;
+  av.textContent = role === 'user' ? '👤' : '🐾';
+  const bubble = document.createElement('div');
+  bubble.className = `bubble ${role === 'user' ? 'user-bubble' : 'ai-bubble'}`;
+  if (role === 'assistant') {
+    bubble.innerHTML = typeof marked !== 'undefined' ? marked.parse(content) : content.replace(/\n/g,'<br>');
+  } else {
+    bubble.textContent = content;
+  }
+  row.appendChild(av);
+  row.appendChild(bubble);
+  container.appendChild(row);
+  container.scrollTop = container.scrollHeight;
+}
+
+function showTyping() {
+  const container = document.getElementById('messages');
+  const row = document.createElement('div');
+  row.className = 'msg-row'; row.id = 'typingRow';
+  const av = document.createElement('div');
+  av.className = 'avatar ai-av'; av.textContent = '🐾';
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble ai-bubble';
+  bubble.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+  row.appendChild(av); row.appendChild(bubble);
+  container.appendChild(row);
+  container.scrollTop = container.scrollHeight;
+}
+function removeTyping() { const e = document.getElementById('typingRow'); if (e) e.remove(); }
+
+// ── API呼び出し ──
+async function sendMessage(text) {
+  if (isLoading) return;
+  const input = document.getElementById('userInput');
+  const content = text || input.value.trim();
+  if (!content) return;
+  input.value = ''; autoResize(input);
+  addMessage('user', content);
+  history.push({role:'user', content});
+  isLoading = true;
+  document.getElementById('sendBtn').disabled = true;
+  showTyping();
+  try {
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        action: 'chat',
+        userId: sessionStorage.getItem('food_bio_user'),
+        messages: history,
+        system: SYSTEM_PROMPT
+      })
+    });
+    const data = await res.json();
+    removeTyping();
+    if (data.success) {
+      const reply = data.message || '（応答エラー）';
+      history.push({role:'assistant', content:reply});
+      addMessage('assistant', reply);
+      autoSave();
+    } else if (data.status === 'suspended') {
+      addMessage('assistant', '⚠️ このアカウントは現在ご利用いただけません。お問い合わせください。');
+    } else {
+      addMessage('assistant', `❌ エラー: ${data.message || '不明なエラー'}`);
+    }
+  } catch(e) {
+    removeTyping();
+    addMessage('assistant', '❌ 接続エラーが発生しました。しばらくしてからお試しください。');
+  }
+  isLoading = false;
+  document.getElementById('sendBtn').disabled = false;
+}
+
+function useChip(el) { switchTab('chat'); sendMessage(el.textContent); }
+function handleKeyDown(e) { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendMessage(); } }
+function autoResize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 100) + 'px'; }
+
+// ── 保存・エクスポート・クリア ──
+function autoSave() { try { localStorage.setItem('food_bio_history', JSON.stringify(history)); } catch(e) {} }
+function saveConversation() {
+  try {
+    localStorage.setItem('food_bio_history', JSON.stringify(history));
+    const s = document.getElementById('saveStatus');
+    s.textContent = '✓ 保存しました ' + new Date().toLocaleTimeString('ja-JP');
+    setTimeout(() => s.textContent = '', 3000);
+  } catch(e) { alert('保存に失敗しました'); }
+}
+function exportConversation() {
+  if (!history.length) { alert('会話履歴がありません'); return; }
+  let text = 'Food専科 BIO mini 会話ログ\nエクスポート日時: ' + new Date().toLocaleString('ja-JP') + '\n' + '='.repeat(50) + '\n\n';
+  history.forEach(m => {
+    text += (m.role === 'user' ? '【あなた】' : '【AI】') + '\n' + m.content + '\n\n' + '-'.repeat(30) + '\n\n';
+  });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], {type:'text/plain;charset=utf-8'}));
+  a.download = `food_bio_${new Date().toISOString().slice(0,10)}.txt`;
+  a.click(); URL.revokeObjectURL(a.href);
+}
+function clearConversation() {
+  if (!confirm('会話履歴をクリアしますか？')) return;
+  history = []; localStorage.removeItem('food_bio_history');
+  document.getElementById('messages').innerHTML = '';
+  addWelcomeMessage();
+}
+function loadHistory() {
+  try {
+    const saved = localStorage.getItem('food_bio_history');
+    if (saved) { history = JSON.parse(saved); history.forEach(m => addMessage(m.role, m.content)); }
+  } catch(e) { history = []; }
+}
+
+// ── 手作り食 ──
+function buildIngredientGrids() {
+  Object.entries(INGREDIENTS).forEach(([category, items]) => {
+    const grid = document.getElementById(`grid-${category}`);
+    if (!grid) return;
+    items.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'ingredient-item';
+      div.id = `ing-${item.id}`;
+      div.innerHTML = `<div class="ingredient-check">✓</div><div class="ingredient-label">${item.label}</div><div class="gram-input-wrap" id="gw-${item.id}"><input class="gram-input" type="number" id="g-${item.id}" value="100" min="1" max="1000" step="5" onclick="event.stopPropagation()" oninput="event.stopPropagation()"><span class="gram-unit">g</span></div>`;
+      div.onclick = (e) => { if (e.target.classList.contains('gram-input')) return; toggleIngredient(item.id, div); };
+      grid.appendChild(div);
+    });
+  });
+}
+
+function toggleIngredient(id, el) {
+  if (selectedIngredients[id]) {
+    delete selectedIngredients[id];
+    el.classList.remove('selected');
+  } else {
+    let found = null;
+    Object.values(INGREDIENTS).forEach(arr => arr.forEach(i => { if (i.id === id) found = i; }));
+    if (found) { selectedIngredients[id] = found; el.classList.add('selected'); }
+  }
+}
+
+function selectRadio(group, el, val) {
+  radioState[group] = val;
+  el.closest('.cooking-options').querySelectorAll('.radio-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+async function calcHomemade() {
+  const weight = parseFloat(document.getElementById('dogWeight').value);
+  const age = document.getElementById('dogAge').value;
+  if (!weight || isNaN(weight)) { alert('体重を入力してください'); return; }
+  if (!Object.keys(selectedIngredients).length) { alert('食材を選択してください'); return; }
+
+  const RER = 70 * Math.pow(weight, 0.75);
+  const actMultiplier = {low:1.2, normal:1.6, high:2.0}[radioState.activity] || 1.6;
+  const DER = RER * actMultiplier;
+
+  let totalKcal=0, totalProt=0, totalFat=0, totalCa=0, totalP=0, totalG=0;
+  const ingredientList = [];
+
+  Object.values(selectedIngredients).forEach(item => {
+    const ginp = document.getElementById(`g-${item.id}`);
+    const g = ginp ? (parseFloat(ginp.value) || 100) : 100;
+    const factor = g / 100;
+    totalKcal += item.kcal * factor;
+    totalProt += item.prot * factor;
+    totalFat  += item.fat  * factor;
+    totalCa   += item.ca   * factor;
+    totalP    += item.p    * factor;
+    totalG    += g;
+    ingredientList.push(`${item.label}(${g}g)`);
+  });
+
+  const caRatio = totalP > 0 ? (totalCa / totalP).toFixed(2) : 'N/A';
+
+  document.getElementById('calcResult').innerHTML = `
+    <div class="result-box">
+      <div class="result-title">📊 栄養計算結果（参考値）</div>
+      <div class="result-grid">
+        <div class="result-item"><div class="result-item-label">合計重量</div><div class="result-item-value">${Math.round(totalG)}<span class="result-item-unit">g</span></div></div>
+        <div class="result-item"><div class="result-item-label">エネルギー</div><div class="result-item-value">${Math.round(totalKcal)}<span class="result-item-unit">kcal</span></div></div>
+        <div class="result-item"><div class="result-item-label">タンパク質</div><div class="result-item-value">${totalProt.toFixed(1)}<span class="result-item-unit">g</span></div></div>
+        <div class="result-item"><div class="result-item-label">脂質</div><div class="result-item-value">${totalFat.toFixed(1)}<span class="result-item-unit">g</span></div></div>
+        <div class="result-item"><div class="result-item-label">カルシウム</div><div class="result-item-value">${Math.round(totalCa)}<span class="result-item-unit">mg</span></div></div>
+        <div class="result-item"><div class="result-item-label">リン</div><div class="result-item-value">${Math.round(totalP)}<span class="result-item-unit">mg</span></div></div>
+        <div class="result-item"><div class="result-item-label">Ca:P比</div><div class="result-item-value">${caRatio}<span class="result-item-unit">:1</span></div></div>
+        <div class="result-item"><div class="result-item-label">DER(推奨)</div><div class="result-item-value">${Math.round(DER)}<span class="result-item-unit">kcal</span></div></div>
+      </div>
+      ${parseFloat(caRatio) < 1.0 ? '<div class="warn-box">⚠️ Ca:P比が1.0未満です。カルシウム不足の可能性があります。卵殻カルシウムの追加を検討してください。</div>' : ''}
+      <div class="notice-box">
+        🐾 <strong>ご利用上の注意</strong><br>
+        この計算はあくまで<strong>参考値</strong>です。食材の産地・鮮度・調理法によって実際の栄養価は異なります。
+        手作り食への切り替えは、<strong>ドライフードと同じ重量（合計${Math.round(totalG)}g）からスタート</strong>し、
+        胃が慣れてきたら少しずつ調整してください。<br>
+        ⚕️ <strong>手作り食への切り替えはかかりつけの獣医師にご相談の上お決めください。</strong>持病・投薬中の場合は特に重要です。
+      </div>
+    </div>`;
+
+  const prompt = `以下の手作り食の計算値を評価してください。AIは再計算せず、この数値をそのまま使って評価してください。
+
+【犬の情報】
+- 体重: ${weight}kg
+- 年齢: ${age || '不明'}歳
+- 活動レベル: ${radioState.activity}
+- RER: ${Math.round(RER)}kcal / DER推奨: ${Math.round(DER)}kcal
+
+【使用食材（実際のグラム数）】
+${ingredientList.join('、')}
+- 合計重量: ${Math.round(totalG)}g
+
+【肉の調理】${radioState.meatCook} / 【野菜の調理】${radioState.vegCook}
+
+【計算値（参考値）】
+- エネルギー: ${Math.round(totalKcal)}kcal
+- タンパク質: ${totalProt.toFixed(1)}g
+- 脂質: ${totalFat.toFixed(1)}g
+- カルシウム: ${Math.round(totalCa)}mg
+- リン: ${Math.round(totalP)}mg
+- Ca:P比: ${caRatio}:1
+
+このバランスを評価し、改善点があれば上記の承認食材リスト内で提案してください。
+給与量については「ドライフードと同じ重量（${Math.round(totalG)}g）からスタート」という前提でアドバイスしてください。`;
+
+  switchTab('chat');
+  await sendMessage(prompt);
+}
+
+// ── 原材料評価 ──
+async function evalIngredients() {
+  const input = document.getElementById('evalInput').value.trim();
+  if (!input) { alert('原材料を入力してください'); return; }
+  const prompt = `以下のドッグフードの原材料を詳しく評価してください。
+
+${input}
+
+以下の観点で評価してください：
+1. 動物性タンパク質の質と原材料順位
+2. 植物性タンパク質・豆類の確認と注意点
+3. 油脂の種類と質
+4. 総合評価（★1〜5）
+5. 推奨する犬・注意が必要な犬
+6. 改善点または代替フードの方向性`;
+  switchTab('chat');
+  await sendMessage(prompt);
+}
+</script>
+</body>
+</html>
